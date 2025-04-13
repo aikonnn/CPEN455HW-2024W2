@@ -26,7 +26,13 @@ def train_or_test(model, data_loader, optimizer, loss_op, device, args, epoch, m
     for batch_idx, item in enumerate(tqdm(data_loader)):
         model_input, _ = item
         model_input = model_input.to(device)
-        model_output = model(model_input)
+
+        model_input, class_labels = item 
+        model_input = model_input.to(device)
+        labels = [my_bidict[label] for label in class_labels]
+        labels_tensor = torch.as_tensor(labels, dtype=torch.long, device=device)
+        model_output = model(model_input, class_labels = labels_tensor)
+
         loss = loss_op(model_input, model_output)
         loss_tracker.update(loss.item()/deno)
         if mode == 'training':
@@ -203,14 +209,14 @@ if __name__ == '__main__':
         
         # decrease learning rate
         scheduler.step()
-        train_or_test(model = model,
-                      data_loader = test_loader,
-                      optimizer = optimizer,
-                      loss_op = loss_op,
-                      device = device,
-                      args = args,
-                      epoch = epoch,
-                      mode = 'test')
+        # train_or_test(model = model,
+        #               data_loader = test_loader,
+        #               optimizer = optimizer,
+        #               loss_op = loss_op,
+        #               device = device,
+        #               args = args,
+        #               epoch = epoch,
+        #               mode = 'test')
         
         train_or_test(model = model,
                       data_loader = val_loader,
@@ -223,7 +229,14 @@ if __name__ == '__main__':
         
         if epoch % args.sampling_interval == 0:
             print('......sampling......')
-            sample_t = sample(model, args.sample_batch_size, args.obs, sample_op)
+            class_labels = torch.randint(
+                low=0,
+                high=args.num_classes,
+                size=(args.sample_batch_size,),
+                dtype=torch.long,
+                device=device
+            )
+            sample_t = sample(model, args.sample_batch_size, args.obs, sample_op, class_labels)
             sample_t = rescaling_inv(sample_t)
             save_images(sample_t, args.sample_dir)
             sample_result = wandb.Image(sample_t, caption="epoch {}".format(epoch))
