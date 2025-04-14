@@ -128,7 +128,7 @@ if __name__ == '__main__':
     #Reminder: if you have patience to read code line by line, you should notice this comment. here is the reason why we set num_workers to 0:
     #In order to avoid pickling errors with the dataset on different machines, we set num_workers to 0.
     #If you are using ubuntu/linux/colab, and find that loading data is too slow, you can set num_workers to 1 or even bigger.
-    kwargs = {'num_workers':0, 'pin_memory':True, 'drop_last':True}
+    kwargs = {'num_workers':1, 'pin_memory':True, 'drop_last':True}
 
     # set data
     if "mnist" in args.dataset:
@@ -231,7 +231,7 @@ if __name__ == '__main__':
             print('......sampling......')
             class_labels = torch.randint(
                 low=0,
-                high=args.num_classes,
+                high=4,
                 size=(args.sample_batch_size,),
                 dtype=torch.long,
                 device=device

@@ -24,10 +24,29 @@ NUM_CLASSES = len(my_bidict)
 def get_label(model, model_input, device):
     # Write your code here, replace the random classifier with your trained model
     # and return the predicted label, which is a tensor of shape (batch_size,)
+    model.eval()
+    batch_size = model_input.shape[0]
+    predicted_classes = []
+
     with torch.no_grad():
-        logits = model(model_input)  # Forward pass
-        preds = torch.argmax(logits, dim=1) 
-    return preds 
+        for i in range(batch_size):
+            sample = model_input[i, :]  # Extract the i-th image from the batch
+            log_likelihoods = []
+
+            # Calculate the log-likelihood for each class
+            for c in range(NUM_CLASSES):
+                class_label = torch.full((1,), c, dtype=torch.long, device=device)  # Class label for the i-th image
+                output = model(sample.unsqueeze(0), sample=False, class_labels=class_label)  # Unsqueeze to add batch dimension
+                loss = discretized_mix_logistic_loss(sample.unsqueeze(0), output)  # Compute the loss for the sample
+                log_likelihood = -loss  # Maximize log likelihood
+                log_likelihoods.append(log_likelihood)
+
+            # Concatenate the log likelihoods for each class, and find the class with the highest log likelihood
+            log_likelihoods = torch.cat(log_likelihoods, dim=0)
+            predicted_class = torch.argmax(log_likelihoods)  # Get the predicted class
+            predicted_classes.append(predicted_class.item())  # Append the predicted class to the list
+
+    return torch.tensor(predicted_classes, dtype=torch.long, device=device) 
 # End of your code
 
 def classifier(model, data_loader, device):
@@ -69,11 +88,7 @@ if __name__ == '__main__':
                                              **kwargs)
 
     #TODO:Begin of your code
-    #You should replace the random classifier with your trained model
-    pcnn_model = PixelCNN(nr_resnet=1, nr_filters=40, input_channels=3, nr_logistic_mix=5)
-    pcnn_model.load_state_dict(torch.load("models/conditional_pixelcnn.pth", map_location=device))
-    pcnn_model = model.to(device)
-    model = pcnn_classifier(num_classes, pcnn_model)
+    model = PixelCNN(nr_resnet=1, nr_filters=40, input_channels=3, nr_logistic_mix=5)
     #End of your code
     
     model = model.to(device)

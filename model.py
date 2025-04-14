@@ -172,29 +172,3 @@ class random_classifier(nn.Module):
     def forward(self, x, device):
         return torch.randint(0, self.NUM_CLASSES, (x.shape[0],)).to(device)
     
-class pcnn_classifier(nn.Module):
-    def __init__(self, NUM_CLASSES, model):
-        super(pcnn_classifier, self).__init__()
-        self.NUM_CLASSES = NUM_CLASSES
-        self.model = model
-        self.fc = nn.Linear(3, NUM_CLASSES)
-        if os.path.join(os.path.dirname(__file__), 'models') not in os.listdir():
-            os.mkdir(os.path.join(os.path.dirname(__file__), 'models'))
-        torch.save(self.state_dict(), os.path.join(os.path.dirname(__file__), 'models/conditional_pixelcnn.pth'))
-    def forward(self, x, device):
-        self.model.eval()
-        predictions = []
-        
-        with torch.no_grad():
-            log_likelihoods = []
-            for c in range(self.NUM_CLASSES):
-                cond = torch.tensor([c], dtype=torch.long, device=device)
-                outputs = self.model(x, sample=False, class_label=cond)
-                neg_log_likelihood = discretized_mix_logistic_loss(img, outputs)
-                log_likelihood = -neg_log_likelihood
-                log_likelihoods.append(log_likelihood.item())
-            predicted_class = max(range(self.NUM_CLASSES), key=lambda i: log_likelihoods[i])
-            predictions.append(predicted_class)
-        
-        return torch.tensor(predictions, device=device)
-    
