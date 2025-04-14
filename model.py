@@ -72,10 +72,10 @@ class PixelCNN(nn.Module):
 
         down_nr_resnet = [nr_resnet] + [nr_resnet + 1] * 2
         self.down_layers = nn.ModuleList([PixelCNNLayer_down(down_nr_resnet[i], nr_filters,
-                                                self.resnet_nonlinearity, condition_dim=nr_filters) for i in range(3)])
+                                                self.resnet_nonlinearity) for i in range(3)])
 
         self.up_layers   = nn.ModuleList([PixelCNNLayer_up(nr_resnet, nr_filters,
-                                                self.resnet_nonlinearity, condition_dim=nr_filters) for _ in range(3)])
+                                                self.resnet_nonlinearity) for _ in range(3)])
 
         self.downsize_u_stream  = nn.ModuleList([down_shifted_conv2d(nr_filters, nr_filters,
                                                     stride=(2,2)) for _ in range(2)])
@@ -121,8 +121,8 @@ class PixelCNN(nn.Module):
             x = torch.cat((x, padding), 1)
 
         resnet_class_embedding = None
-        if class_labels is not None:
-            resnet_class_embedding = self.resnet_embedding(class_labels)
+        # if class_labels is not None:
+        #     resnet_class_embedding = self.resnet_embedding(class_labels)
 
         ###      UP PASS    ###
         x = x if sample else torch.cat((x, self.init_padding), 1)
