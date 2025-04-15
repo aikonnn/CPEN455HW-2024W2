@@ -32,19 +32,16 @@ def get_label(model, model_input, device):
         for i in range(batch_size):
             sample = model_input[i, :]  # Extract the i-th image from the batch
             log_likelihoods = []
-
             # Calculate the log-likelihood for each class
             for c in range(NUM_CLASSES):
-                class_label = torch.full((1,), c, dtype=torch.long, device=device)  # Class label for the i-th image
-                output = model(sample.unsqueeze(0), sample=False, class_labels=class_label)  # Unsqueeze to add batch dimension
-                loss = discretized_mix_logistic_loss(sample.unsqueeze(0), output)  # Compute the loss for the sample
-                log_likelihood = -loss  # Maximize log likelihood
-                log_likelihoods.append(log_likelihood)
-
-            # Concatenate the log likelihoods for each class, and find the class with the highest log likelihood
+                class_label = torch.full((1,), c, dtype=torch.long, device=device)
+                output = model(sample.unsqueeze(0), sample=False, class_labels=class_label)
+                loss = discretized_mix_logistic_loss(sample.unsqueeze(0), output)
+                log_likelihood = -loss
+                log_likelihoods.append(log_likelihood.unsqueeze(0))
             log_likelihoods = torch.cat(log_likelihoods, dim=0)
-            predicted_class = torch.argmax(log_likelihoods)  # Get the predicted class
-            predicted_classes.append(predicted_class.item())  # Append the predicted class to the list
+            predicted_class = torch.argmax(log_likelihoods)
+            predicted_classes.append(predicted_class.item())
 
     return torch.tensor(predicted_classes, dtype=torch.long, device=device) 
 # End of your code

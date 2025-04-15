@@ -34,6 +34,7 @@ class CPEN455Dataset(Dataset):
         # Convert DataFrame to a list of tuples
         self.samples = list(df.itertuples(index=False, name=None))
         self.samples = [(os.path.join(self.root_dir, path), label) for path, label in self.samples]
+        self.mode = mode
         
     def __len__(self):
         return len(self.samples)
@@ -51,6 +52,10 @@ class CPEN455Dataset(Dataset):
             image = replicate_color_channel(image)
         if self.transform:
           image = self.transform(image)
+        
+        if self.mode == 'test':
+            return image, category_name, img_path
+        
         return image, category_name
     
     def get_all_images(self, label):
